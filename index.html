@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="zh-Hant" class="h-full">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>彩色詞彙測驗遊戲 🌈</title>
+  <!-- TailwindCSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            amberBtn: '#f59e0b', // A
+            greenBtn: '#10b981', // B
+            blueBtn:  '#3b82f6', // C
+            redBtn:   '#ef4444', // D
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .fancy-btn { transition: transform .2s ease, box-shadow .2s ease, filter .2s ease; transform: translateZ(0); will-change: transform, box-shadow, filter; }
+    .fancy-btn:hover { transform: translateY(-4px) scale(1.05); filter: saturate(1.1); }
+    .fancy-btn:active { transform: translateY(0px) scale(0.98); filter: brightness(.95) saturate(0.95); }
+    .shadow-amber { box-shadow: 0 12px 24px rgba(245,158,11,.35); }
+    .shadow-green { box-shadow: 0 12px 24px rgba(16,185,129,.35); }
+    .shadow-blue  { box-shadow: 0 12px 24px rgba(59,130,246,.35); }
+    .shadow-red   { box-shadow: 0 12px 24px rgba(239,68,68,.35); }
+    .fancy-btn:hover.shadow-amber { box-shadow: 0 18px 36px rgba(245,158,11,.55); }
+    .fancy-btn:hover.shadow-green { box-shadow: 0 18px 36px rgba(16,185,129,.55); }
+    .fancy-btn:hover.shadow-blue  { box-shadow: 0 18px 36px rgba(59,130,246,.55); }
+    .fancy-btn:hover.shadow-red   { box-shadow: 0 18px 36px rgba(239,68,68,.55); }
+
+    .gradient-text { background: linear-gradient(90deg, #a855f7, #60a5fa, #f472b6); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+    .rainbow { background: linear-gradient(90deg,#ff0080,#ff8c00,#ffd700,#00ff6a,#00c2ff,#8a2be2); }
+
+    .glass { backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); background: rgba(255,255,255,0.18); }
+    .dark .glass { background: rgba(0,0,0,0.28); }
+
+    .confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+    .confetti span { position: absolute; font-size: 28px; animation: fall 2.8s linear infinite; top: -10%; }
+    @keyframes fall { 0%{ transform: translateY(-10%) rotate(0deg); opacity:0;} 10%{opacity:1;} 100%{ transform: translateY(120vh) rotate(360deg); opacity:0;} }
+  </style>
+</head>
+<body class="h-full min-h-screen bg-gradient-to-br from-purple-600 via-blue-500 to-pink-400 dark:from-[#2b1f3a] dark:via-[#1b2a44] dark:to-[#3a1f39] selection:bg-yellow-300/60">
+
+  <main class="min-h-screen flex items-center justify-center p-4 md:p-6">
+    <div class="glass w-full max-w-3xl rounded-3xl shadow-2xl border border-white/20 dark:border-white/10 p-6 md:p-8 relative">
+      <div class="flex items-center justify-between mb-4 md:mb-6">
+        <h1 class="text-2xl md:text-3xl font-extrabold tracking-wide gradient-text">🌈 彩色詞彙測驗 🎯</h1>
+        <div class="flex items-center gap-3">
+          <label class="inline-flex items-center cursor-pointer select-none">
+            <input id="darkToggle" type="checkbox" class="sr-only">
+            <span class="mr-2 text-sm font-medium text-black/70 dark:text-white/80">深色模式</span>
+            <span class="w-12 h-7 bg-white/60 dark:bg-black/40 rounded-full relative transition">
+              <span id="thumb" class="absolute top-1 left-1 w-5 h-5 bg-white dark:bg-zinc-200 rounded-full transition-transform"></span>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <div class="flex items-center justify-between text-sm font-semibold text-black/70 dark:text-white/80 mb-2">
+          <span>🌟 進度</span>
+          <span id="progressText">0 / 10</span>
+        </div>
+        <div class="w-full h-3 bg-white/30 dark:bg-white/10 rounded-full overflow-hidden">
+          <div id="progressBar" class="h-full rainbow rounded-full transition-all duration-300 ease-out" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div id="statusRow" class="flex flex-wrap items-center gap-3 text-sm text-black/80 dark:text-white/80 mb-5">
+        <span id="qCount" class="px-3 py-1 rounded-full bg-white/60 dark:bg-white/10">題目：<b>0</b></span>
+        <span id="score" class="px-3 py-1 rounded-full bg-white/60 dark:bg-white/10">得分：<b>0</b></span>
+        <span class="px-3 py-1 rounded-full bg-white/60 dark:bg-white/10">🤔 加油！</span>
+      </div>
+
+      <div class="rounded-2xl border border-white/20 dark:border-white/10 p-5 md:p-6 bg-white/30 dark:bg-white/5">
+        <div class="text-center mb-4 md:mb-6">
+          <div class="text-sm md:text-base text-black/70 dark:text-white/70 mb-1">請選出正確的中文定義：</div>
+          <div id="word" class="gradient-text text-3xl md:text-4xl font-extrabold tracking-wider">—</div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+          <button id="btnA" class="fancy-btn shadow-amber rounded-2xl px-4 py-4 text-left bg-amberBtn text-white font-semibold focus:outline-none focus:ring-4 ring-amber-300/50" data-key="A" aria-label="選項A">
+            <div class="text-lg md:text-xl">🟡 A</div>
+            <div id="optA" class="text-sm md:text-base opacity-95">—</div>
+          </button>
+          <button id="btnB" class="fancy-btn shadow-green rounded-2xl px-4 py-4 text-left bg-greenBtn text-white font-semibold focus:outline-none focus:ring-4 ring-green-300/50" data-key="B" aria-label="選項B">
+            <div class="text-lg md:text-xl">🟢 B</div>
+            <div id="optB" class="text-sm md:text-base opacity-95">—</div>
+          </button>
+          <button id="btnC" class="fancy-btn shadow-blue rounded-2xl px-4 py-4 text-left bg-blueBtn text-white font-semibold focus:outline-none focus:ring-4 ring-blue-300/50" data-key="C" aria-label="選項C">
+            <div class="text-lg md:text-xl">🔵 C</div>
+            <div id="optC" class="text-sm md:text-base opacity-95">—</div>
+          </button>
+          <button id="btnD" class="fancy-btn shadow-red rounded-2xl px-4 py-4 text-left bg-redBtn text-white font-semibold focus:outline-none focus:ring-4 ring-red-300/50" data-key="D" aria-label="選項D">
+            <div class="text-lg md:text-xl">🔴 D</div>
+            <div id="optD" class="text-sm md:text-base opacity-95">—</div>
+          </button>
+        </div>
+
+        <div id="feedback" class="text-center text-lg md:text-xl font-bold mt-4 h-8"></div>
+      </div>
+
+      <div class="mt-5 flex items-center justify-between">
+        <button id="restart" class="rounded-xl px-5 py-2.5 font-semibold bg-white/70 text-black hover:bg-white transition dark:bg-white/10 dark:text-white dark:hover:bg-white/20">🔄 重新開始</button>
+        <div class="text-right text-sm text-black/70 dark:text-white/70">🌈🤔🎯🏆⭐🎉 祝你闖關成功！</div>
+      </div>
+
+      <div id="finishOverlay" class="hidden absolute inset-0 flex items-center justify-center">
+        <div class="glass w-full max-w-xl rounded-3xl p-8 text-center border border-white/30">
+          <div class="text-4xl md:text-5xl font-extrabold gradient-text mb-3">🏆 完成挑戰！</div>
+          <div class="text-lg md:text-xl text-black/90 dark:text-white/90 mb-4">
+            太棒了！你已經連續答對 <span id="finalScore" class="font-bold">10</span> 題 🎉🎉🎉
+          </div>
+          <div class="flex items-center justify-center gap-3 text-2xl mb-4">
+            <span>🌈</span><span>⭐</span><span>🎯</span><span>🎉</span><span>🥳</span><span>👏</span>
+          </div>
+          <button id="playAgain" class="fancy-btn shadow-blue rounded-2xl px-6 py-3 font-bold text-white bg-blueBtn hover:brightness-110 transition">再玩一次！</button>
+          <div class="confetti" aria-hidden="true" id="confetti"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const vocab = [
+      { en:"Merge", zh:"合併" },
+      { en:"Wrap text", zh:"自動換列" },
+      { en:"Freeze", zh:"凍結" },
+      { en:"Row", zh:"列" },
+      { en:"Column", zh:"欄" },
+      { en:"Scroll", zh:"滾動" },
+      { en:"Abnormal", zh:"異常的" },
+      { en:"Automatically", zh:"自動地" },
+      { en:"Conditional", zh:"附有條件的" },
+      { en:"Sort", zh:"排序" },
+      { en:"Organize", zh:"整理" },
+      { en:"Efficient", zh:"效率高的" },
+      { en:"Custom Sort", zh:"自訂排序" },
+      { en:"Chart", zh:"圖表" },
+      { en:"Illustrate", zh:"說明" },
+      { en:"Trend", zh:"趨勢" },
+      { en:"Observation", zh:"觀察" },
+      { en:"Comparison", zh:"比較" },
+      { en:"Bar chart", zh:"棒形圖" },
+      { en:"Pie chart", zh:"圓形圖" },
+      { en:"Proportion", zh:"比例" },
+      { en:"Distribution", zh:"分佈" },
+      { en:"Insert", zh:"插入" },
+      { en:"Axis", zh:"軸" },
+    ];
+
+    const TARGET_SCORE = 10;
+    let score = 0, askedCount = 0, askedIndices = [], current = null;
+
+    const wordEl = document.getElementById('word');
+    const feedbackEl = document.getElementById('feedback');
+    const qCountEl = document.getElementById('qCount');
+    const scoreEl = document.getElementById('score');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const restartBtn = document.getElementById('restart');
+    const finishOverlay = document.getElementById('finishOverlay');
+    const finalScore = document.getElementById('finalScore');
+    const playAgain = document.getElementById('playAgain');
+    const confettiWrap = document.getElementById('confetti');
+
+    const btns = [
+      { key:'A', btn:document.getElementById('btnA'), opt:document.getElementById('optA') },
+      { key:'B', btn:document.getElementById('btnB'), opt:document.getElementById('optB') },
+      { key:'C', btn:document.getElementById('btnC'), opt:document.getElementById('optC') },
+      { key:'D', btn:document.getElementById('btnD'), opt:document.getElementById('optD') },
+    ];
+
+    const shuffle = (arr)=>{ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; };
+    const pickUnseenIndex = ()=>{
+      const pool = [];
+      for (let i=0;i<vocab.length;i++) if (!askedIndices.includes(i)) pool.push(i);
+      if (pool.length===0) return null;
+      return pool[Math.floor(Math.random()*pool.length)];
+    };
+    const updateTopBars = ()=>{
+      qCountEl.innerHTML = `題目：<b>${askedCount}</b>`;
+      scoreEl.innerHTML  = `得分：<b>${score}</b>`;
+      const pct = Math.min(100, Math.round(score / TARGET_SCORE * 100));
+      progressBar.style.width = pct + '%';
+      progressText.textContent = `${score} / ${TARGET_SCORE}`;
+    };
+    const setButtonsEnabled = (enabled)=>{
+      btns.forEach(({btn})=>{
+        btn.disabled = !enabled;
+        btn.style.opacity = enabled ? '1' : '0.8';
+        btn.style.cursor = enabled ? 'pointer' : 'not-allowed';
+      });
+    };
+    const makeConfetti = ()=>{
+      confettiWrap.innerHTML = '';
+      const emojis = ['🌈','⭐','🎉','🎯','🥳','🏆','✨','🍀','🚀','👏'];
+      const count = 40;
+      for (let i=0;i<count;i++){
+        const s=document.createElement('span');
+        s.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+        s.style.left = Math.random()*100 + '%';
+        s.style.animationDelay = (Math.random()*1.5) + 's';
+        s.style.animationDuration = (2 + Math.random()*2.5) + 's';
+        confettiWrap.appendChild(s);
+      }
+    };
+
+    const nextQuestion = ()=>{
+      feedbackEl.textContent = '';
+      feedbackEl.className = 'text-center text-lg md:text-xl font-bold mt-4 h-8';
+      if (score >= TARGET_SCORE) {
+        finalScore.textContent = TARGET_SCORE;
+        finishOverlay.classList.remove('hidden');
+        makeConfetti();
+        return;
+      }
+      const idx = pickUnseenIndex();
+      if (idx===null) { askedIndices=[]; return nextQuestion(); }
+      askedIndices.push(idx); askedCount++; updateTopBars();
+      const item = vocab[idx];
+      wordEl.textContent = item.en;
+      const wrongs = shuffle(vocab.filter((_,i)=>i!==idx).map(v=>v.zh)).slice(0,3);
+      const options = shuffle([item.zh, ...wrongs]);
+      btns.forEach(({opt},i)=> { opt.textContent = options[i]; });
+      current = { index:idx, correctZh:item.zh, options };
+      setButtonsEnabled(true);
+    };
+
+    const handleAnswer = (text)=>{
+      if (!current) return;
+      setButtonsEnabled(false);
+      const isCorrect = text === current.correctZh;
+      if (isCorrect) {
+        score++;
+        feedbackEl.innerHTML = '✅ <span class="text-emerald-700 dark:text-emerald-300">答對了！太讚啦～</span>';
+      } else {
+        const correctIndex = current.options.indexOf(current.correctZh);
+        const correctKey = ['A','B','C','D'][correctIndex];
+        feedbackEl.innerHTML = `❌ <span class="text-red-700 dark:text-red-300">答錯了！</span> 正確解答是 <b>${current.correctZh}</b>（${correctKey}）`;
+      }
+      updateTopBars();
+      setTimeout(nextQuestion, 1000);
+    };
+
+    btns.forEach(({btn,opt})=>{
+      const pick = ()=> handleAnswer(opt.textContent);
+      btn.addEventListener('click', pick, {passive:true});
+      btn.addEventListener('touchstart', (e)=>{ e.preventDefault(); pick(); }, {passive:false});
+    });
+
+    const resetGame = ()=>{ score=0; askedCount=0; askedIndices=[]; finishOverlay.classList.add('hidden'); updateTopBars(); nextQuestion(); };
+    document.getElementById('restart').addEventListener('click', resetGame);
+    document.getElementById('playAgain').addEventListener('click', resetGame);
+    document.getElementById('playAgain').addEventListener('touchstart', (e)=>{ e.preventDefault(); resetGame(); }, {passive:false});
+
+    const toggle = document.getElementById('darkToggle');
+    const thumb = document.getElementById('thumb');
+    const applyDark = (isDark)=>{
+      document.documentElement.classList.toggle('dark', isDark);
+      toggle.checked = isDark;
+      thumb.style.transform = isDark ? 'translateX(20px)' : 'translateX(0px)';
+      try{ localStorage.setItem('quiz-dark', isDark ? '1' : '0'); }catch(e){}
+    };
+    (function initTheme(){
+      let fromLS = null;
+      try{ fromLS = localStorage.getItem('quiz-dark'); }catch(e){}
+      if (fromLS !== null) applyDark(fromLS === '1');
+      else applyDark(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    })();
+    toggle.addEventListener('change', ()=> applyDark(toggle.checked));
+
+    updateTopBars();
+    nextQuestion();
+  </script>
+</body>
+</html>
